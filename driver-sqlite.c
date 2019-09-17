@@ -27,8 +27,6 @@ static void die(const char *msg)
     exit(2);
 }
 
-static void diemem(void) { die("out of memory"); }
-
 static struct sexp *new_ok(void)
 {
     return sexp_new_pair(sexp_new_symbol("ok"), sexp_new_null());
@@ -48,8 +46,7 @@ static struct sexp *cmd_connect(struct sexp *args)
     size_t len;
     int error;
 
-    dbname = 0;  // same as ":memory:"
-
+    dbname = 0;
     len = sexp_list_len(args);
     if (len % 2 != 0) {
         return new_error("args", "odd number of args");
@@ -66,19 +63,22 @@ static struct sexp *cmd_connect(struct sexp *args)
         }
         if (sexp_is_symbol_name(name, "dbname")) {
             if (!(dbname = sexp_strdup(value))) {
-                diemem();
+                return new_error("args", "cannot turn dbname into C string");
             }
         } else {
             return new_error("args", "no such database option for sqlite");
         }
     }
+    if (!dbname) {
+        return new_error("args", "dbname option not given");
+    }
     if ((error = sqlite3_open(dbname, &database))) {
         if (!database) {
-            die(sqlite3_errstr(error));
+            return new_error("database", sqlite3_errstr(error));
         }
         warn(sqlite3_errmsg(database));
         if ((error = sqlite3_close(database))) {
-            die(sqlite3_errmsg(database));
+            return new_error("database", sqlite3_errmsg(database));
         }
         die(0);
     }
@@ -99,6 +99,37 @@ static struct sexp *cmd_disconnect(struct sexp *args)
 // sqlite3_column()
 // sqlite3_finalize()
 
+static struct sexp *step(void)
+{
+    struct sexp *head;
+    struct sexp *tail;
+    struct sexp *colsexp;
+    const char *coltext;
+    int error;
+    int i, n;
+
+    error = sqlite3_step(stmt);
+    if (error == SQLITE_DONE) {
+        error = sqlite3_finalize(stmt);
+        stmt = 0;
+        if (error) {
+            return new_error("database", sqlite3_errmsg(database));
+        }
+        return new_ok();
+    }
+    if (error != SQLITE_ROW) {
+        return new_error("database", sqlite3_errmsg(database));
+    }
+    head = tail = sexp_new_pair(sexp_new_symbol("row"), sexp_new_null());
+    n = sqlite3_column_count(stmt);
+    for (i = 0; i < n; i++) {
+        coltext = (const char *)sqlite3_column_text(stmt, i);
+        colsexp = coltext ? sexp_new_string(coltext) : sexp_new_null();
+        tail = sexp_set_tail(tail, sexp_new_pair(colsexp, sexp_new_null()));
+    }
+    return sexp_new_pair(sexp_new_symbol("ok"), head);
+}
+
 static struct sexp *cmd_execute(struct sexp *args)
 {
     struct sexp *sql_sexp;
@@ -107,11 +138,11 @@ static struct sexp *cmd_execute(struct sexp *args)
     int error;
 
     free(sql);
+    if (stmt) {
+        return new_error("state", "not finished executing another statement");
+    }
     if (sexp_list_len(args) != 1) {
         return new_error("args", "wrong number of args");
-    }
-    if (!database) {
-        return new_error("not-connected", "not connected to database");
     }
     sql_sexp = sexp_list_ref(args, 0);
     if (!sexp_is_string(sql_sexp)) {
@@ -120,31 +151,31 @@ static struct sexp *cmd_execute(struct sexp *args)
     if (!(sql = sexp_strdup(sql_sexp))) {
         return new_error("args", "cannot turn SQL query into C string");
     }
+    if (!database) {
+        return new_error("state", "not connected to database");
+    }
     if ((error = sqlite3_prepare_v2(database, sql, -1, &stmt, &tail))) {
-        return new_error("args", sqlite3_errmsg(database));
+        return new_error("database", sqlite3_errmsg(database));
     }
     if (*tail) {
-        return new_error("args",
-                         "execute: got more than one SQL statement at once");
+        return new_error(
+        "args", "cannot execute more than one SQL statement at once");
     }
-    error = sqlite3_step(stmt);
-    if (error == SQLITE_ROW) {
-        return sexp_new_int64(1);
-    } else if (error != SQLITE_DONE) {
-        return new_error("args", sqlite3_errmsg(database));
-    }
-    if ((error = sqlite3_finalize(stmt))) {
-        return new_error("args", sqlite3_errmsg(database));
-    }
-    return new_ok();
+    return step();
 }
 
-static struct sexp *cmd_read_result_rows(struct sexp *args)
+static struct sexp *cmd_read_row(struct sexp *args)
 {
     if (sexp_list_len(args)) {
         return new_error("args", "wrong number of args");
     }
-    return new_ok();
+    if (!database) {
+        return new_error("state", "not connected to database");
+    }
+    if (!stmt) {
+        return new_error("state", "not executing a statement");
+    }
+    return step();
 }
 
 typedef struct sexp *(*cmd_func_t)(struct sexp *args);
@@ -158,7 +189,7 @@ static const struct cmd cmds[] = {
     { "connect", cmd_connect },
     { "disconnect", cmd_disconnect },
     { "execute", cmd_execute },
-    { "read-result-rows", cmd_read_result_rows },
+    { "read-row", cmd_read_row },
     { 0 },
 };
 
@@ -194,12 +225,12 @@ int main(void)
             die(sexp_binary_read_error(rd));
         }
         if (!sexp_is_list(command)) {
-            die("command is not a list");
+            response = new_error("args", "command is not a list");
+        } else if (!(cmd = cmd_by_symbol(sexp_head(command)))) {
+            response = new_error("args", "no such command");
+        } else {
+            response = cmd->func(sexp_tail(command));
         }
-        if (!(cmd = cmd_by_symbol(sexp_head(command)))) {
-            die("no such command");
-        }
-        response = cmd->func(sexp_tail(command));
         if (!sexp_binary_write(wr, response)) {
             die(sexp_binary_write_error(wr));
         }

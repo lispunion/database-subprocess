@@ -132,6 +132,15 @@ struct sexp *sexp_tail(struct sexp *sexp)
     return sexp_is_pair(sexp) ? ((struct sexp_pair *)sexp)->tail : 0;
 }
 
+struct sexp *sexp_set_tail(struct sexp *sexp, struct sexp *tail)
+{
+    if (!sexp_is_pair(sexp)) {
+        return 0;
+    }
+    ((struct sexp_pair *)sexp)->tail = tail;
+    return tail;
+}
+
 int sexp_is_list(struct sexp *sexp)
 {
     for (; !sexp_is_null(sexp); sexp = sexp_tail(sexp)) {
@@ -320,6 +329,7 @@ struct sexp *sexp_new_int64(int64_t value)
     if (!(int64 = calloc(1, sizeof(*int64)))) {
         return 0;
     }
+    int64->bits = SEXP_INT64;
     int64->value = value;
     return (struct sexp *)int64;
 }

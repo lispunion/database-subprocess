@@ -25,11 +25,13 @@
     (let ((response (read-binary-sexp from-sub)))
       (display "A: ")
       (writeln response)
+      (show-stderr)
       response))
 
   (command `(connect dbname ,dbname))
   (command `(execute "create table hello (greeting text)"))
   (command `(execute "insert into hello (greeting) values ('Hello world')"))
-  (command `(disconnect))
-
-  (show-stderr))
+  (let loop ((response (command `(execute "select greeting from hello"))))
+    (unless (null? (cdr response))
+      (loop (command `(read-row)))))
+  (command `(disconnect)))

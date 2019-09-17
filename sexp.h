@@ -17,6 +17,7 @@ int sexp_is_pair(struct sexp *sexp);
 struct sexp *sexp_new_pair(struct sexp *head, struct sexp *tail);
 struct sexp *sexp_head(struct sexp *sexp);
 struct sexp *sexp_tail(struct sexp *sexp);
+struct sexp *sexp_set_tail(struct sexp *sexp, struct sexp *tail);
 
 int sexp_is_list(struct sexp *sexp);
 struct sexp *sexp_list_tail(struct sexp *sexp, size_t n);
