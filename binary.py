@@ -152,3 +152,5 @@ if __name__ == "__main__":
         # write_varint(sys.stdout.buffer, 0x12_34_56_78)
         # write_varbytes(sys.stdout.buffer, b"Hello world")
         print(write_binary_sexp(sys.stdout.buffer, "Hello world"))
+    elif sys.argv[1] == "rw":
+        write_binary_sexp(sys.stdout.buffer, read_binary_sexp(sys.stdin.buffer))
