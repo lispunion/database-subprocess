@@ -4,5 +4,6 @@
   (import (scheme base)
           (scheme read)
           (scheme write))
-  (cond-expand (chibi (import (srfi 151))))
+  (cond-expand ((or chibi gauche sagittarius)
+                (import (srfi 151))))
   (include "binary.scm"))
