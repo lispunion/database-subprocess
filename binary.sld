@@ -1,0 +1,5 @@
+(define-library (binary)
+  (import (scheme base)
+          (scheme read)
+          (scheme write))
+  (include "binary.scm"))
