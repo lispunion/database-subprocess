@@ -6,7 +6,14 @@ from io import BytesIO
 
 
 Eof = namedtuple("Eof", "")
-Sym = namedtuple("Sym", "name")
+
+
+class Sym:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
 
 
 def _byte(b):
