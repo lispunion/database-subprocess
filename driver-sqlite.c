@@ -104,7 +104,7 @@ static struct sexp *step(void)
     struct sexp *head;
     struct sexp *tail;
     struct sexp *colsexp;
-    const char *coltext;
+    sqlite3_value *value;
     int error;
     int i, n;
 
@@ -123,8 +123,29 @@ static struct sexp *step(void)
     head = tail = sexp_new_pair(sexp_new_symbol("row"), sexp_new_null());
     n = sqlite3_column_count(stmt);
     for (i = 0; i < n; i++) {
-        coltext = (const char *)sqlite3_column_text(stmt, i);
-        colsexp = coltext ? sexp_new_string(coltext) : sexp_new_null();
+        value = sqlite3_column_value(stmt, i);
+        colsexp = sexp_new_null();
+        switch (sqlite3_value_type(value)) {
+        case SQLITE_INTEGER:
+            colsexp = sexp_new_int64(sqlite3_value_int64(value));
+            break;
+        case SQLITE_FLOAT:
+            // TODO: sqlite3_value_double()
+            // fallthrough
+        case SQLITE_TEXT:
+            colsexp = sexp_new_string_bytes(sqlite3_value_text(value),
+                                            sqlite3_value_bytes(value));
+            break;
+        case SQLITE_BLOB:
+            colsexp = sexp_new_bytevector_bytes(sqlite3_value_blob(value),
+                                                sqlite3_value_bytes(value));
+            break;
+        case SQLITE_NULL:
+            break;
+        default:
+            // TODO: error
+            break;
+        }
         tail = sexp_set_tail(tail, sexp_new_pair(colsexp, sexp_new_null()));
     }
     return sexp_new_pair(sexp_new_symbol("ok"), head);
