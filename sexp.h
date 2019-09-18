@@ -29,16 +29,16 @@ int sexp_is_symbol(struct sexp *sexp);
 int sexp_is_symbol_name(struct sexp *sexp, const char *str);
 struct sexp *sexp_new_symbol(const char *str);
 struct sexp *sexp_new_symbol_zeros(size_t nbyte);
-struct sexp *sexp_new_symbol_bytes(void *bytes, size_t nbyte);
+struct sexp *sexp_new_symbol_bytes(const void *bytes, size_t nbyte);
 
 int sexp_is_string(struct sexp *sexp);
 struct sexp *sexp_new_string(const char *str);
 struct sexp *sexp_new_string_zeros(size_t nbyte);
-struct sexp *sexp_new_string_bytes(void *bytes, size_t nbyte);
+struct sexp *sexp_new_string_bytes(const void *bytes, size_t nbyte);
 
 int sexp_is_bytevector(struct sexp *sexp);
 struct sexp *sexp_new_bytevector_zeros(size_t nbyte);
-struct sexp *sexp_new_bytevector_bytes(void *bytes, size_t nbyte);
+struct sexp *sexp_new_bytevector_bytes(const void *bytes, size_t nbyte);
 
 int sexp_is_vector(struct sexp *sexp);
 struct sexp *sexp_new_vector(size_t len);

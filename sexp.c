@@ -239,7 +239,7 @@ struct sexp *sexp_new_symbol_zeros(size_t nbyte)
     return sexp_new_bytes_zeros(SEXP_SYMBOL, nbyte);
 }
 
-struct sexp *sexp_new_symbol_bytes(void *bytes, size_t nbyte)
+struct sexp *sexp_new_symbol_bytes(const void *bytes, size_t nbyte)
 {
     return sexp_new_bytes(SEXP_SYMBOL, bytes, nbyte);
 }
@@ -259,7 +259,7 @@ struct sexp *sexp_new_string_zeros(size_t nbyte)
     return sexp_new_bytes_zeros(SEXP_STRING, nbyte);
 }
 
-struct sexp *sexp_new_string_bytes(void *bytes, size_t nbyte)
+struct sexp *sexp_new_string_bytes(const void *bytes, size_t nbyte)
 {
     return sexp_new_bytes(SEXP_STRING, bytes, nbyte);
 }
@@ -274,7 +274,7 @@ struct sexp *sexp_new_bytevector_zeros(size_t nbyte)
     return sexp_new_bytes_zeros(SEXP_BYTEVECTOR, nbyte);
 }
 
-struct sexp *sexp_new_bytevector_bytes(void *bytes, size_t nbyte)
+struct sexp *sexp_new_bytevector_bytes(const void *bytes, size_t nbyte)
 {
     return sexp_new_bytes(SEXP_BYTEVECTOR, bytes, nbyte);
 }
