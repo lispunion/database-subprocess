@@ -1,3 +1,5 @@
+*.fas
+*.lib
 *.o
 /driver-sqlite
 /test.db
