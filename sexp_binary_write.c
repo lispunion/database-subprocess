@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "sexp.h"
 #include "sexp_binary_write.h"

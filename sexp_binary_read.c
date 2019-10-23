@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <stdio.h>  // TODO: only for debug prints
 
