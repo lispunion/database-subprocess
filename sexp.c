@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define SEXP_NULL 0
 #define SEXP_FALSE 1
